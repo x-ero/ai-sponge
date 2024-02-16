@@ -1,4 +1,5 @@
 const token = "Discord Bot Token Goes Here";
+const allowedChannelId = 'ChannelID Goes Here';
 
 const {Client, GatewayIntentBits} = require("discord.js");
 const client = new Client({
@@ -14,6 +15,9 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", async (message) => {
+    if (message.channelId !== allowedChannelId) {
+        return;
+    }
     if (message.content.substring(0, 6) === "!topic") {
         try {
             var request = {
