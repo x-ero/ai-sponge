@@ -188,7 +188,10 @@ var getScenario = async (req, res) => {
     }
 }
 
-var pollSpeech = async (uid_array) => {
+const MAX_RETRIES = 100; 
+const RETRY_DELAY = 20;
+
+var pollSpeech = async (uid_array, retryCount = 0) => {
     console.log("Polling Speech");
     await wait(3000);
     var polledSpeeches = [];
@@ -197,10 +200,21 @@ var pollSpeech = async (uid_array) => {
         polledSpeeches.push(await speakStatus(uid_array[i]));
     }
 
-    if (polledSpeeches.filter(speech => speech.state.status == "pending").length != 0) {
+    const pendingSpeeches = polledSpeeches.filter(speech => speech.state.status === "pending");
+
+    if (pendingSpeeches.length !== 0) {
         console.log("Speech generation in progress...");
-        //Recursively call the poll function
-        pollSpeech(uid_array);
+
+        // Limit the number of retries
+        if (retryCount >= MAX_RETRIES) {
+            throw new Error("Maximum retry limit reached while polling for speech.");
+        }
+
+        // Add a delay before retrying
+        await wait(RETRY_DELAY);
+
+        // Retry with increased retry count
+        return await pollSpeech(uid_array, retryCount + 1);
     } else {
         console.log("Speech generation completed!");
         return polledSpeeches;
